@@ -1,0 +1,35 @@
+name: Build Rust Binary
+
+on:
+  workflow_call:
+    outputs:
+      artifact_name:
+        description: "The name of the uploaded artifact"
+        value: ${{ jobs.build.outputs.artifact_name }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      artifact_name: pwgen
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.89.0
+          override: true
+
+      - name: Build release binary
+        run: cargo build --release
+
+      - name: Rename binary to pwgen
+        run: mv target/release/cls-capp-pwgen target/release/pwgen
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: pwgen
+          path: target/release/pwgen

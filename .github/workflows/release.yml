@@ -1,92 +1,53 @@
-name: Build and Release Rust Binary
+name: Release Rust Binary
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag (optional)'
-        required: false
-        default: ''
+        description: 'Release tag (e.g., v1.0.1)'
+        required: true
 
 jobs:
-  build-release:
+  release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Rust
-        uses: actions-rs/toolchain@v1
+      - name: Call build workflow
+        id: build_binary
+        uses: ./.github/workflows/rust-ubuntu.yml # Adjust path if needed
+
+      - name: Download binary from called workflow
+        uses: actions/download-artifact@v4
         with:
-          toolchain: 1.89.0
-          override: true
+          name: ${{ steps.build_binary.outputs.artifact_name }}
+          path: ./
 
-
-      - name: Get tag input
-        id: get_tag
-        run: |
-          echo "::set-output name=tag::${{ github.event.inputs.tag }}"
-
-      - name: Check for existing tag or generate new tag
-        id: tag_logic
-        run: |
-          set -e
-          # Fetch all tags from the remote repository
-          git fetch --tags
-
-          TAG="${{ steps.get_tag.outputs.tag }}"
-          if [ -z "$TAG" ]; then
-            # No tag supplied, generate next semantic version tag
-            # Get latest tag
-            LATEST_TAG=$(git tag --sort=-v:refname | head -n 1)
-            if [ -z "$LATEST_TAG" ]; then
-              TAG="v0.1.0"
-            else
-              # Bump patch version
-              MAJOR=$(echo $LATEST_TAG | cut -d. -f1 | sed 's/v//')
-              MINOR=$(echo $LATEST_TAG | cut -d. -f2)
-              PATCH=$(echo $LATEST_TAG | cut -d. -f3)
-              PATCH=$((PATCH+1))
-              TAG="v${MAJOR}.${MINOR}.${PATCH}"
-            fi
-            echo "No tag supplied. Generated new tag: $TAG"
-          else
-            # Tag supplied, check if it exists
-            if git rev-parse "$TAG" >/dev/null 2>&1; then
-              echo "Tag $TAG already exists. Failing."
-              exit 1
-            fi
-            echo "Using supplied tag: $TAG"
-          fi
-          echo "::set-output name=tag::$TAG"
-
-      - name: Create tag
+      - name: Set up Git config
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git tag ${{ steps.tag_logic.outputs.tag }}
-          git push origin ${{ steps.tag_logic.outputs.tag }}
 
-      - name: Build release binary
-        run: cargo build --release
-
-      - name: Rename binary to pwgen
-        run: mv target/release/cls-capp-pwgen target/release/pwgen
-
-      - name: Upload binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: pwgen
-          path: target/release/pwgen
+      - name: Create tag
+        id: create_tag
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists. Failing."
+            exit 1
+          fi
+          git tag "$TAG"
+          git push origin "$TAG"
+          echo "::set-output name=tag::$TAG"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ steps.tag_logic.outputs.tag }}
-          files: target/release/pwgen
+          tag_name: ${{ steps.create_tag.outputs.tag }}
+          files: pwgen
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
