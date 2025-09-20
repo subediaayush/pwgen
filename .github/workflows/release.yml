@@ -1,11 +1,13 @@
 name: Release Rust Binary
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       tag:
         description: 'Release tag (e.g., v1.0.1)'
-        required: true
+        required: false
 
 jobs:
   release:
