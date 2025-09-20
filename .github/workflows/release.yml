@@ -80,11 +80,11 @@ jobs:
           name: pwgen
           path: target/release/pwgen
 
-#      - name: Create GitHub Release
-#        uses: softprops/action-gh-release@v1
-#        with:
-#          tag_name: ${{ steps.tag_logic.outputs.tag }}
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        # Upload binary as release asset
-#        files: target/release/pwgen
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag_logic.outputs.tag }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Upload binary as release asset
+        files: target/release/pwgen
