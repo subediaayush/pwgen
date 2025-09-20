@@ -35,6 +35,9 @@ jobs:
         id: tag_logic
         run: |
           set -e
+          # Fetch all tags from the remote repository
+          git fetch --tags
+
           TAG="${{ steps.get_tag.outputs.tag }}"
           if [ -z "$TAG" ]; then
             # No tag supplied, generate next semantic version tag
