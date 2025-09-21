@@ -10,6 +10,9 @@ on:
         required: false
 
 jobs:
+  build_binary:
+    uses: ./.github/workflows/rust-ubuntu.yml
+
   release:
     runs-on: ubuntu-latest
     permissions:
@@ -20,8 +23,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Call build workflow
-        id: build_binary
-        uses: ./.github/workflows/rust-ubuntu.yml # Adjust path if needed
+        uses: ./.github/actions/rust-ubuntu
 
       - name: Download binary from called workflow
         uses: actions/download-artifact@v4
