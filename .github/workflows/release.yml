@@ -10,9 +10,6 @@ on:
         required: false
 
 jobs:
-  build_binary:
-    uses: ./.github/workflows/rust-ubuntu.yml
-
   release:
     runs-on: ubuntu-latest
     permissions:

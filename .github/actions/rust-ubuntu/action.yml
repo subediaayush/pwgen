@@ -1,0 +1,30 @@
+name: Build Rust Binary
+description: Builds the Rust binary
+inputs: {}
+outputs:
+  artifact_name:
+    description: "Name of the built artifact"
+    value: pwgen
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: 1.89.0
+        override: true
+
+    - name: Build release binary
+      run: cargo build --release
+
+    - name: Rename binary to pwgen
+      run: mv target/release/cls-capp-pwgen target/release/pwgen
+
+    - name: Upload binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: pwgen
+        path: target/release/pwgen
