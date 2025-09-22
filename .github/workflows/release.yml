@@ -10,23 +10,27 @@ on:
         required: false
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        platform: [ubuntu-latest, windows-latest, macos-latest]
         include:
-          - platform: ubuntu-latest
-            artifact_name: pwgen-linux
+          - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-          - platform: windows-latest
-            artifact_name: pwgen-windows.exe
+            artifact_name: pwgen-linux
+            bin_path: target/x86_64-unknown-linux-gnu/release/cls-capp-pwgen
+            bin_out: pwgen-linux
+          - os: windows-latest
             target: x86_64-pc-windows-gnu
-          - platform: macos-latest
-            artifact_name: pwgen-macos
+            artifact_name: pwgen-windows.exe
+            bin_path: target/x86_64-pc-windows-gnu/release/cls-capp-pwgen.exe
+            bin_out: pwgen-windows.exe
+          - os: macos-latest
             target: x86_64-apple-darwin
+            artifact_name: pwgen-macos
+            bin_path: target/x86_64-apple-darwin/release/cls-capp-pwgen
+            bin_out: pwgen-macos
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -39,24 +43,20 @@ jobs:
           override: true
 
       - name: Build binary
-        run: |
-          cargo build --release --target ${{ matrix.target }}
-          if [ "${{ matrix.platform }}" = "ubuntu-latest" ]; then
-            mv target/${{ matrix.target }}/release/cls-capp-pwgen pwgen-linux
-          elif [ "${{ matrix.platform }}" = "windows-latest" ]; then
-            mv target/${{ matrix.target }}/release/cls-capp-pwgen.exe pwgen-windows.exe
-          elif [ "${{ matrix.platform }}" = "macos-latest" ]; then
-            mv target/${{ matrix.target }}/release/cls-capp-pwgen pwgen-macos
-          fi
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Rename binary
+        run: mv ${{ matrix.bin_path }} ${{ matrix.bin_out }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.artifact_name }}
+          path: ${{ matrix.bin_out }}
 
   release-final:
-    needs: release
+    name: Create Release
+    needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
