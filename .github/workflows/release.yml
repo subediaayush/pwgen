@@ -33,17 +33,45 @@ jobs:
           git config user.name github-actions
           git config user.email github-actions@github.com
 
-      - name: Create tag
-        id: create_tag
+      - name: Check for existing tag or generate new tag
+        id: tag_logic
         run: |
-          TAG="${{ github.event.inputs.tag }}"
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "Tag $TAG already exists. Failing."
-            exit 1
+          set -e
+          # Fetch all tags from the remote repository
+          git fetch --tags
+
+          TAG="${{ steps.get_tag.outputs.tag }}"
+          if [ -z "$TAG" ]; then
+            # No tag supplied, generate next semantic version tag
+            # Get latest tag
+            LATEST_TAG=$(git tag --sort=-v:refname | head -n 1)
+            if [ -z "$LATEST_TAG" ]; then
+              TAG="v0.1.0"
+            else
+              # Bump patch version
+              MAJOR=$(echo $LATEST_TAG | cut -d. -f1 | sed 's/v//')
+              MINOR=$(echo $LATEST_TAG | cut -d. -f2)
+              PATCH=$(echo $LATEST_TAG | cut -d. -f3)
+              PATCH=$((PATCH+1))
+              TAG="v${MAJOR}.${MINOR}.${PATCH}"
+            fi
+            echo "No tag supplied. Generated new tag: $TAG"
+          else
+            # Tag supplied, check if it exists
+            if git rev-parse "$TAG" >/dev/null 2>&1; then
+              echo "Tag $TAG already exists. Failing."
+              exit 1
+            fi
+            echo "Using supplied tag: $TAG"
           fi
-          git tag "$TAG"
-          git push origin "$TAG"
           echo "::set-output name=tag::$TAG"
+
+      - name: Create tag
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git tag ${{ steps.tag_logic.outputs.tag }}
+          git push origin ${{ steps.tag_logic.outputs.tag }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
