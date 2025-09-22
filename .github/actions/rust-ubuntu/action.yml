@@ -22,11 +22,11 @@ runs:
       shell: bash
 
     - name: Rename binary to pwgen
-      run: mv target/release/cls-capp-pwgen target/release/pwgen
+      run: mv target/release/cls-capp-pwgen target/release/pwgen-linux
       shell: bash
 
     - name: Upload binary
       uses: actions/upload-artifact@v4
       with:
-        name: pwgen
+        name: pwgen-linux
         path: target/release/pwgen

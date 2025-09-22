@@ -14,18 +14,59 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - platform: ubuntu-latest
+            artifact_name: pwgen-linux
+            target: x86_64-unknown-linux-gnu
+          - platform: windows-latest
+            artifact_name: pwgen-windows.exe
+            target: x86_64-pc-windows-gnu
+          - platform: macos-latest
+            artifact_name: pwgen-macos
+            target: x86_64-apple-darwin
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Call build workflow
-        uses: ./.github/actions/rust-ubuntu
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
 
-      - name: Download binary from called workflow
+      - name: Build binary
+        run: |
+          cargo build --release --target ${{ matrix.target }}
+          if [ "${{ matrix.platform }}" = "ubuntu-latest" ]; then
+            mv target/${{ matrix.target }}/release/cls-capp-pwgen pwgen-linux
+          elif [ "${{ matrix.platform }}" = "windows-latest" ]; then
+            mv target/${{ matrix.target }}/release/cls-capp-pwgen.exe pwgen-windows.exe
+          elif [ "${{ matrix.platform }}" = "macos-latest" ]; then
+            mv target/${{ matrix.target }}/release/cls-capp-pwgen pwgen-macos
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_name }}
+
+  release-final:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all platform artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ${{ steps.build_binary.outputs.artifact_name }}
           path: ./
 
       - name: Set up Git config
@@ -37,18 +78,13 @@ jobs:
         id: tag_logic
         run: |
           set -e
-          # Fetch all tags from the remote repository
           git fetch --tags
-
-          TAG="${{ steps.get_tag.outputs.tag }}"
+          TAG="${{ github.event.inputs.tag }}"
           if [ -z "$TAG" ]; then
-            # No tag supplied, generate next semantic version tag
-            # Get latest tag
             LATEST_TAG=$(git tag --sort=-v:refname | head -n 1)
             if [ -z "$LATEST_TAG" ]; then
               TAG="v0.1.0"
             else
-              # Bump patch version
               MAJOR=$(echo $LATEST_TAG | cut -d. -f1 | sed 's/v//')
               MINOR=$(echo $LATEST_TAG | cut -d. -f2)
               PATCH=$(echo $LATEST_TAG | cut -d. -f3)
@@ -57,14 +93,13 @@ jobs:
             fi
             echo "No tag supplied. Generated new tag: $TAG"
           else
-            # Tag supplied, check if it exists
             if git rev-parse "$TAG" >/dev/null 2>&1; then
               echo "Tag $TAG already exists. Failing."
               exit 1
             fi
             echo "Using supplied tag: $TAG"
           fi
-          echo "::set-output name=tag::$TAG"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: Create tag
         run: |
@@ -77,6 +112,9 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.tag_logic.outputs.tag }}
-          files: pwgen
+          files: |
+            pwgen-linux
+            pwgen-windows.exe
+            pwgen-macos
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
