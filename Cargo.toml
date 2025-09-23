@@ -9,3 +9,7 @@ rand = "0.8.5"
 cli-clipboard = "0.4"
 log = "0.4.28"
 simple_logger = "5.0.0"
+
+[[bin]]
+name = "cls-capp-pwgen"
+path = "src/main.rs"
