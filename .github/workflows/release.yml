@@ -16,18 +16,18 @@ jobs:
     strategy:
       matrix:
         include:
-#          - os: ubuntu-latest
-#            target: x86_64-unknown-linux-gnu
-#            artifact_name: pwgen-linux
-#            bin_path: target/release/cls-capp-pwgen
-#          - os: windows-latest
-#            target: x86_64-pc-windows-gnu
-#            artifact_name: pwgen-windows.exe
-#            bin_path: target/release/cls-capp-pwgen.exe
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: pwgen-linux
+            bin_name: cls-capp-pwgen
+          - os: windows-latest
+            target: x86_64-pc-windows-gnu
+            artifact_name: pwgen-windows.exe
+            bin_name: cls-capp-pwgen.exe
           - os: macos-latest
             target: x86_64-apple-darwin
             artifact_name: pwgen-macos
-            bin_path: ./target/x86_64-apple-darwin/cls-capp-pwgen
+            bin_name: cls-capp-pwgen
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -58,7 +58,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.bin_path }}
+          path: target/${{ matrix.target }}/release/${{ matrix.bin_name }}
 
   release-final:
     name: Create Release
