@@ -42,6 +42,12 @@ jobs:
       - name: Build binary
         run: cargo build --release --target ${{ matrix.target }}
 
+      - name: List Files
+        run: ls
+
+      - name: List Files In Target
+        run: ls -la target/release
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
