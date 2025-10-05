@@ -102,13 +102,19 @@ jobs:
           git tag ${{ steps.tag_logic.outputs.tag }}
           git push origin ${{ steps.tag_logic.outputs.tag }}
 
+      - name: Set release files
+        id: set_files
+        run: |
+          FILES=""
+          [ -f pwgen-linux ] && FILES="$FILES pwgen-linux"
+          [ -f pwgen-windows.exe ] && FILES="$FILES pwgen-windows.exe"
+          [ -f pwgen-macos ] && FILES="$FILES pwgen-macos"
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.tag_logic.outputs.tag }}
-          files: |
-            pwgen-linux
-            pwgen-windows.exe
-            pwgen-macos
+          files: ${{ steps.set_files.outputs.files }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
