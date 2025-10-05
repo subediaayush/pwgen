@@ -112,11 +112,7 @@ jobs:
       - name: Set release files
         id: set_files
         run: |
-          ls -la ./
-          FILES=""
-          [ -f pwgen-linux ] && FILES="$FILES pwgen-linux"
-          [ -f pwgen-windows.exe ] && FILES="$FILES pwgen-windows.exe"
-          [ -f pwgen-macos ] && FILES="$FILES pwgen-macos"
+          FILES="$FILES pwgen-linux pwgen-windows.exe pwgen-macos"
           echo $FILES
           echo "files=$FILES" >> $GITHUB_OUTPUT
 
