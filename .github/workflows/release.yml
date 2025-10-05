@@ -63,6 +63,12 @@ jobs:
         with:
           path: ./
 
+      - name: Move artifacts to root
+        run: |
+          mv pwgen-linux/pwgen-linux . 2>/dev/null || true
+          mv pwgen-windows.exe/pwgen-windows.exe . 2>/dev/null || true
+          mv pwgen-macos/pwgen-macos . 2>/dev/null || true
+
       - name: Set up Git config
         run: |
           git config user.name github-actions
