@@ -70,12 +70,6 @@ jobs:
       - name: List all artifacts
         run: ls -la ./
 
-      - name: Move artifacts to root
-        run: |
-          mv pwgen-linux/cls-capp-pwgen pwgen-linux 2>/dev/null || true
-          mv pwgen-windows.exe/cls-capp-pwgen.exe pwgen-windows.exe 2>/dev/null || true
-          mv pwgen-macos/pwgen-macos pwgen-macos 2>/dev/null || true
-
       - name: Set up Git config
         run: |
           git config user.name github-actions
@@ -118,6 +112,7 @@ jobs:
       - name: Set release files
         id: set_files
         run: |
+          ls -la ./
           FILES=""
           [ -f pwgen-linux ] && FILES="$FILES pwgen-linux"
           [ -f pwgen-windows.exe ] && FILES="$FILES pwgen-windows.exe"
