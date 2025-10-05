@@ -191,4 +191,17 @@ mod tests {
         let expected = BTreeMap::from([(0, 0), (3, 2), (4, 2), (8, 1)]);
         assert_eq!(scale_map, expected);
     }
+
+    #[test]
+    fn test_format_without_pattern() {
+        let passwrod = generate_password({
+            PwArgs {
+                pattern: None,
+                length: 10,
+                format: true,
+            }
+        });
+
+        assert!(passwrod.is_err());
+    }
 }

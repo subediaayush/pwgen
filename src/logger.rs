@@ -1,11 +1,16 @@
+use env_logger::Builder;
 use log::LevelFilter;
-use simple_logger::SimpleLogger;
+use std::io::Write;
 
 pub fn set_verbose(verbose: bool) {
-    let log_level = if verbose {
+    let mut builder = Builder::new();
+    builder.format(|buf, record| {
+        writeln!(buf, "{}", record.args())
+    });
+    builder.filter_level(if verbose {
         LevelFilter::Debug
     } else {
         LevelFilter::Info
-    };
-    let _ = SimpleLogger::new().with_level(log_level).init();
+    });
+    let _ = builder.try_init();
 }
