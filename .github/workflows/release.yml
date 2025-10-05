@@ -119,12 +119,11 @@ jobs:
         id: set_files
         run: |
           FILES=""
-          [ -f pwgen-linux-bin ] && FILES="$FILES pwgen-linux-bin"
-          [ -f pwgen-windows-bin.exe ] && FILES="$FILES pwgen-windows-bin.exe"
-          [ -f pwgen-macos-bin ] && FILES="$FILES pwgen-macos-bin"
-          echo $FILES
-          echo "files=$FILES" >> $GITHUB_OUTPUT
-
+          [ -f pwgen-linux-bin ] && FILES="$FILES\npwgen-linux-bin"
+          [ -f pwgen-windows-bin.exe ] && FILES="$FILES\npwgen-windows-bin.exe"
+          [ -f pwgen-macos-bin ] && FILES="$FILES\npwgen-macos-bin"
+          FILES=$(echo -e "$FILES" | sed '/^$/d')
+          echo -e "files<<EOF\n$FILES\nEOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
