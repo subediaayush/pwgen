@@ -122,7 +122,7 @@ jobs:
           FILES=""
           [ -f pwgen-linux-bin ] && FILES="$FILES pwgen-linux-bin"
           [ -f pwgen-windows-bin.exe ] && FILES="$FILES pwgen-windows-bin.exe"
-          [ -f pwgen-macos-bin ] && FILES="$FILES pwgen-macos/pwgen-macos-bin"
+          [ -f pwgen-macos-bin ] && FILES="$FILES pwgen-macos-bin"
           echo $FILES
           echo "files=$FILES" >> $GITHUB_OUTPUT
 
