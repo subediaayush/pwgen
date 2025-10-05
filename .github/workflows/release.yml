@@ -67,6 +67,9 @@ jobs:
         with:
           path: ./
 
+      - name: List all artifacts
+        run: ls -la ./
+
       - name: Move artifacts to root
         run: |
           mv pwgen-linux/cls-capp-pwgen pwgen-linux 2>/dev/null || true
