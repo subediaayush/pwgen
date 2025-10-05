@@ -41,7 +41,9 @@ jobs:
 
       - name: Build binary
 #        run: cargo build --release --target ${{ matrix.target }}
-        run: touch target/${{ matrix.target }}/release/${{ matrix.bin_name }}
+        run: |
+          mkdir -p target/${{ matrix.target }}/release
+          touch target/${{ matrix.target }}/release/${{ matrix.bin_name }}
         shell: bash
 
       - name: Upload artifact
