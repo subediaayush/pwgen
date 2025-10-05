@@ -69,9 +69,9 @@ jobs:
 
       - name: Move artifacts to root
         run: |
-          mv pwgen-linux/cls-capp-pwgen pwgen-linux
-          mv pwgen-windows.exe/cls-capp-pwgen.exe pwgen-windows.exe
-          mv pwgen-macos/cls-capp-pwgen pwgen-macos
+          mv pwgen-linux/cls-capp-pwgen pwgen-linux-bin
+          mv pwgen-windows.exe/cls-capp-pwgen.exe pwgen-windows-bin.exe
+          mv pwgen-macos/cls-capp-pwgen pwgen-macos-bin
 
       - name: List all artifacts
         run: ls -la ./
@@ -120,9 +120,9 @@ jobs:
         run: |
           ls -la ./
           FILES=""
-          [ -f pwgen-linux/pwgen-linux ] && FILES="$FILES pwgen-linux/pwgen-linux"
-          [ -f pwgen-windows.exe/pwgen-windows.exe ] && FILES="$FILES pwgen-windows.exe/pwgen-windows.exe"
-          [ -f pwgen-macos/pwgen-macos ] && FILES="$FILES pwgen-macos/pwgen-macos"
+          [ -f pwgen-linux-bin ] && FILES="$FILES pwgen-linux-bin"
+          [ -f pwgen-windows-bin.exe ] && FILES="$FILES pwgen-windows-bin.exe"
+          [ -f pwgen-macos-bin ] && FILES="$FILES pwgen-macos/pwgen-macos-bin"
           echo $FILES
           echo "files=$FILES" >> $GITHUB_OUTPUT
 
