@@ -118,7 +118,6 @@ jobs:
       - name: Set release files
         id: set_files
         run: |
-          ls -la ./
           FILES=""
           [ -f pwgen-linux-bin ] && FILES="$FILES pwgen-linux-bin"
           [ -f pwgen-windows-bin.exe ] && FILES="$FILES pwgen-windows-bin.exe"
