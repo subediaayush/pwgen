@@ -1,0 +1,134 @@
+name: Release Rust Binary
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g., v1.0.1)'
+        required: false
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: pwgen-linux
+            bin_name: cls-capp-pwgen
+          - os: windows-latest
+            target: x86_64-pc-windows-gnu
+            artifact_name: pwgen-windows.exe
+            bin_name: cls-capp-pwgen.exe
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact_name: pwgen-macos
+            bin_name: cls-capp-pwgen
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+
+      - name: Build binary
+        run: cargo build --release --target ${{ matrix.target }}
+#        run: |
+#          mkdir -p target/${{ matrix.target }}/release
+#          touch target/${{ matrix.target }}/release/${{ matrix.bin_name }}
+        shell: bash
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: target/${{ matrix.target }}/release/${{ matrix.bin_name }}
+
+  release-final:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all platform artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./
+
+      - name: Move artifacts to root
+        run: |
+          mv pwgen-linux/cls-capp-pwgen pwgen-linux-bin
+          mv pwgen-windows.exe/cls-capp-pwgen.exe pwgen-windows-bin.exe
+          mv pwgen-macos/cls-capp-pwgen pwgen-macos-bin
+
+      - name: List all artifacts
+        run: ls -la ./
+
+      - name: Set up Git config
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+
+      - name: Check for existing tag or generate new tag
+        id: tag_logic
+        run: |
+          set -e
+          git fetch --tags
+          TAG="${{ github.event.inputs.tag }}"
+          if [ -z "$TAG" ]; then
+            LATEST_TAG=$(git tag --sort=-v:refname | head -n 1)
+            if [ -z "$LATEST_TAG" ]; then
+              TAG="v0.1.0"
+            else
+              MAJOR=$(echo $LATEST_TAG | cut -d. -f1 | sed 's/v//')
+              MINOR=$(echo $LATEST_TAG | cut -d. -f2)
+              PATCH=$(echo $LATEST_TAG | cut -d. -f3)
+              PATCH=$((PATCH+1))
+              TAG="v${MAJOR}.${MINOR}.${PATCH}"
+            fi
+            echo "No tag supplied. Generated new tag: $TAG"
+          else
+            if git rev-parse "$TAG" >/dev/null 2>&1; then
+              echo "Tag $TAG already exists. Failing."
+              exit 1
+            fi
+            echo "Using supplied tag: $TAG"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Create tag
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git tag ${{ steps.tag_logic.outputs.tag }}
+          git push origin ${{ steps.tag_logic.outputs.tag }}
+
+      - name: Set release files
+        id: set_files
+        run: |
+          FILES=""
+          [ -f pwgen-linux-bin ] && FILES="$FILES\npwgen-linux-bin"
+          [ -f pwgen-windows-bin.exe ] && FILES="$FILES\npwgen-windows-bin.exe"
+          [ -f pwgen-macos-bin ] && FILES="$FILES\npwgen-macos-bin"
+          FILES=$(echo -e "$FILES" | sed '/^$/d')
+          echo -e "files<<EOF\n$FILES\nEOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag_logic.outputs.tag }}
+          files: ${{ steps.set_files.outputs.files }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
