@@ -51,11 +51,13 @@ jobs:
 
   release-final:
     name: Create Release
-    id: create_release # Add this id
     needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      tag_name: ${{ steps.create_release.outputs.tag_name }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -124,6 +126,7 @@ jobs:
           echo -e "files<<EOF\n$FILES\nEOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
+        id: create_release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.tag_logic.outputs.tag }}
@@ -135,8 +138,6 @@ jobs:
     name: Update Homebrew Tap
     needs: release-final
     runs-on: ubuntu-latest
-    outputs:
-      tag_name: ${{ steps.create_release.outputs.tag_name }}
     steps:
       - name: Calculate macOS binary checksum
         run: |
