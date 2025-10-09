@@ -162,6 +162,7 @@ jobs:
           base-branch: "main"
           tag-name: ${{ needs.release-final.outputs.tag_name }}
           commit-message: "chore: bump version to {{version}}"
-          url-template: "https://github.com/{repository}/releases/download/{tag}/{artifact_name}"
-          artifact-name: "pwgen-macos-bin"
-          sha256: ${{ steps.checksum.outputs.sha256 }}
+          download-url: "https://github.com/${{ github.repository }}/releases/download/${{ needs.release-final.outputs.tag_name }}/pwgen-macos-bin"
+          download-sha256: ${{ steps.checksum.outputs.sha256 }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.BUMP_HOMEBREW_TOKEN }}
