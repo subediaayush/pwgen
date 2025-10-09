@@ -41,9 +41,6 @@ jobs:
 
       - name: Build binary
         run: cargo build --release --target ${{ matrix.target }}
-#        run: |
-#          mkdir -p target/${{ matrix.target }}/release
-#          touch target/${{ matrix.target }}/release/${{ matrix.bin_name }}
         shell: bash
 
       - name: Upload artifact
@@ -54,6 +51,7 @@ jobs:
 
   release-final:
     name: Create Release
+    id: create_release # Add this id
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -132,3 +130,37 @@ jobs:
           files: ${{ steps.set_files.outputs.files }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-homebrew-tap:
+    name: Update Homebrew Tap
+    needs: release-final
+    runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ steps.create_release.outputs.tag_name }}
+    steps:
+      - name: Calculate macOS binary checksum
+        run: |
+          # Download the macOS binary from the release assets
+          gh release download ${{ needs.release-final.outputs.tag_name }} --pattern 'pwgen-macos-bin' --repo $GITHUB_REPOSITORY
+          # Calculate SHA256 and store it in an output
+          MACOS_SHA=$(sha256sum pwgen-macos-bin | cut -d' ' -f1)
+          echo "sha256=$MACOS_SHA" >> $GITHUB_OUTPUT
+        id: checksum
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Homebrew tap
+        uses: mislav/bump-homebrew-formula-action@v1
+        with:
+          # The GitHub token is required to push changes to the tap repository.
+          # You must create a personal access token with 'repo' scope and add it
+          # as a secret named 'BUMP_HOMEBREW_TOKEN' in your repository settings.
+          token: ${{ secrets.BUMP_HOMEBREW_TOKEN }}
+          formula-path: "Casks/pwgen.rb"
+          homebrew-tap: "subediaayush/homebrew-pwgen"
+          base-branch: "main"
+          tag-name: ${{ needs.release-final.outputs.tag_name }}
+          commit-message: "chore: bump version to {{version}}"
+          url-template: "https://github.com/{repository}/releases/download/{tag}/{artifact_name}"
+          artifact-name: "pwgen-macos-bin"
+          sha256: ${{ steps.checksum.outputs.sha256 }}
