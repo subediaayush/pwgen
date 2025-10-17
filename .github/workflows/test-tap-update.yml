@@ -1,0 +1,35 @@
+name: Test Homebrew Tap Update
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-local-tap-update:
+    name: Test Update Homebrew Tap Locally
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set test variables
+        id: vars
+        run: |
+          echo "tag=v99.99.99-test" >> $GITHUB_OUTPUT
+          # This is the SHA256 of an empty string, perfect for a placeholder.
+          echo "sha=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" >> $GITHUB_OUTPUT
+
+      - name: Update Homebrew tap
+        # This action will check out the tap repo inside its container.
+        # When running with `act`, we will mount our local tap repo to that location.
+        uses: mislav/bump-homebrew-formula-action@v1
+        with:
+          formula-path: "Casks/pwgen.rb"
+          homebrew-tap: "${{ github.repository_owner }}/homebrew-pwgen"
+          base-branch: "main"
+          tag-name: ${{ steps.vars.outputs.tag }}
+          commit-message: "chore: bump version to {{version}} (local test)"
+          # We don't want this test to actually push to GitHub
+          push-to: ""
+          download-url: "https://github.com/${{ github.repository }}/releases/download/${{ steps.vars.outputs.tag }}/pwgen-macos-bin"
+          download-sha256: ${{ steps.vars.outputs.sha }}
+        env:
+          # This token is still needed for the action to query repo details via the API
+          # but it won't be used for pushing.
+          GITHUB_TOKEN: ${{ secrets.BUMP_HOMEBREW_TOKEN }}

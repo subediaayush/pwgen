@@ -56,7 +56,7 @@ jobs:
     permissions:
       contents: write
     outputs:
-      tag_name: ${{ steps.create_release.outputs.tag_name }}
+      tag_name: ${{ steps.tag_logic.outputs.tag }}
 
     steps:
       - name: Checkout code
@@ -139,16 +139,16 @@ jobs:
     needs: release-final
     runs-on: ubuntu-latest
     steps:
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pwgen-macos
+
       - name: Calculate macOS binary checksum
-        run: |
-          # Download the macOS binary from the release assets
-          gh release download ${{ needs.release-final.outputs.tag_name }} --pattern 'pwgen-macos-bin' --repo $GITHUB_REPOSITORY
-          # Calculate SHA256 and store it in an output
-          MACOS_SHA=$(sha256sum pwgen-macos-bin | cut -d' ' -f1)
-          echo "sha256=$MACOS_SHA" >> $GITHUB_OUTPUT
         id: checksum
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          MACOS_SHA=$(sha256sum cls-capp-pwgen | cut -d' ' -f1)
+          echo "sha256=$MACOS_SHA" >> $GITHUB_OUTPUT
 
       - name: Update Homebrew tap
         uses: mislav/bump-homebrew-formula-action@v1
